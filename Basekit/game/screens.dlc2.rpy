@@ -257,7 +257,7 @@ screen hateplus_main_screen:
         hour,minute,second,meridiem = get_time()
 
         # I don't like 24-hour display so added exception for Korean too. - iAmGhost
-        if persistent._language != "" and persistent._language != "korean":
+        if persistent._language != "" and persistent._language != "korean" and persistent._language != "japanese":
             if meridiem == "PM":
                 hour = str(int(hour)+12)
 
@@ -295,6 +295,10 @@ screen hateplus_main_screen:
                                 $ meridiem_yoffset = 0
                                 if persistent._language == "korean":
                                     $ meridiem_yoffset = 24
+                                # For Japanese UI tweak
+                                $ modify_size = 0
+                                if persistent._language == "japanese":
+                                    $ meridiem_yoffset = 1
                                 text meridiem style style.text["hateplus" + persistent._language] bold True size 18 yoffset meridiem_yoffset color (192,192,192,128) at flicker
                                 text hour style style.text["hateplus"] bold True size 50 yoffset -5 color (192,192,192,128) at flicker
                                 text minute style style.text["hateplus"] bold True size 50 yoffset -5 at flicker
@@ -313,7 +317,11 @@ screen hateplus_main_screen:
                             text _([ "Lunar New Year (Feb 10)", "Lunar New Year", "" ][store.day-1]) style style.text["hateplus"+ persistent._language] size 20 at flicker
 
                     vbox spacing -10:
-                        text _("Current Destination") style style.text["hateplus" + persistent._language] at flicker
+                        # For Japanese UI tweak
+                        if persistent._language == "japanese":
+                            text ("ETA " + str(4-store.day) + " days") style style.text["hateplus" + persistent._language] size 18 at flicker ypos 0
+                        else
+                            text _("Current Destination") style style.text["hateplus" + persistent._language] at flicker
                         hbox:
                             vbox spacing -10 yalign 0.5:
                                 # For Korean UI tweak - iAmGhost
@@ -323,7 +331,10 @@ screen hateplus_main_screen:
                                 if persistent._language == "korean":
                                     $ eta_ypos = 2
                                     $ sol_ypos = 5
-                                text ("ETA " + str(4-store.day) + " days") style style.text["hateplus" + persistent._language] size 18 at flicker ypos eta_ypos
+                                if persistent._language == "japanese":
+                                    text _("Current Destination") style style.text["hateplus" + persistent._language] at flicker
+                                else
+                                    text ("ETA " + str(4-store.day) + " days") style style.text["hateplus" + persistent._language] size 18 at flicker ypos eta_ypos
                                 text "Sol III" style style.text["hateplus" + persistent._language] size 24 bold True at flicker ypos sol_ypos
                             vbox spacing -12 yalign 0.5:
                                 text "179° 56' 39.4\"" style style.text["hateplus"] size 16 color (192,192,192,128) at flicker
@@ -364,6 +375,11 @@ screen hateplus_main_screen:
                         $ unread_button_yoffset = 6
                         $ unread_button_xoffset = -10
 
+                    # For Japanese UI tweak
+                    if persistent._language == "japanese":
+                        $ unread_button_yoffset = 8
+                        $ unread_button_xoffset = 0
+
                     button style style.button[char_style()] size_group "stats" action [ Play("sound", "sfx/fxbeep5.mp3"), Jump("hateplus_pan_to_inbox") ] yalign 1.0 yoffset unread_button_yoffset xoffset unread_button_xoffset left_padding 14 right_padding 16 focus "inbox" at flicker:
                         has vbox spacing -15
 
@@ -381,8 +397,20 @@ screen hateplus_main_screen:
                             $ inbox_size = 20
                             $ unread_text = " 부재중"
 
-                        text _(str(inbox_unread) + unread_text) style style.text[char_style() + persistent._language] xalign 0.5 bold True size unread_size ypos unread_ypos
-                        text _("INBOX") style style.text[char_style() + persistent._language] xalign 0.5 ypos 3 size 20
+                        # For Japanese UI tweak
+                        if persistent._language == "japanese":
+                            $ unread_ypos = 0
+                            $ unread_size = 18
+                            $ inbox_ypos = 0
+                            $ inbox_size = 17
+                            $ unread_text = "未読 "
+
+                        if persistent._language == "japanese":
+                            text _("INBOX") style style.text[char_style() + persistent._language] xalign 0.5 ypos -5 size inbox_size
+                            text _(unread_text + str(inbox_unread)) style style.text[char_style() + persistent._language] xalign 0.5 bold True size unread_size ypos unread_ypos
+                        else:
+                            text _(str(inbox_unread) + unread_text) style style.text[char_style() + persistent._language] xalign 0.5 bold True size unread_size ypos unread_ypos
+                            text _("INBOX") style style.text[char_style() + persistent._language] xalign 0.5 ypos 3 size 20
                 text _(WARNING_TEXT[char_style(None)]) style style.text["hateplus" + persistent._language] justify True size 20 bold (not persistent._language) at flicker
 
 
@@ -421,10 +449,16 @@ screen hateplus_main_screen_ai:
                     $ current_outfit = outfits[store.outfit].title()
                     $ current_outfit_ypos = 0.1
 
+                    $ current_outfit_size_tweak = style.text[char_style() + persistent._language].size
+
                     if persistent._language == "korean":
                         $ current_outfit_ypos = 0
+                    elif persistent._language == "japanese":
+                        # For Japanese UI tweak
+                        $ current_outfit_ypos = 0
+                        $ current_outfit_size_tweak -= 2
 
-                    text _(current_outfit) style style.text[char_style() + persistent._language] bold True minwidth 110 text_align 0.5 ypos (-1 * current_outfit_ypos)
+                    text _(current_outfit) style style.text[char_style() + persistent._language] bold True minwidth 110 text_align 0.5 ypos (-1 * current_outfit_ypos) size current_outfit_size_tweak
                     text _("OUTFIT") style style.text[char_style() + persistent._language] minwidth 110 text_align 0.5 ypos current_outfit_ypos
                 button style style.button[char_style()] xminimum 325 action If(any_unextracted, [ Play("sound", "sfx/fxbeep5.mp3"), Hide("main_screen"), If(store.override_conversation, Jump("override_conversation"), Jump("hateplus_pan_to_logs")) ], None) bottom_padding 14:
                     has vbox spacing -10
@@ -538,7 +572,10 @@ transform third_search:
 
 screen hangul_input:
     add HangulInput(font="0@fonts/NanumGothic.ttc", color="808080DC")
-    
+
+screen hiragana_input:
+    add HiraganaInput(font="fonts/mplus-2c-regular.ttf", color="808080DC")
+
 screen hateplus_logs:
     key "mousedown_5" action nop
     key "mousedown_4" action nop
@@ -572,6 +609,10 @@ screen hateplus_logs:
                 if persistent._language == "korean":
                     add HangulInput(font="0@fonts/NanumGothic.ttc", length=10, color=hateplus_color[char_style(None)], style=style.text["hateplus" + persistent._language], minwidth=280, yalign=0.5, italic=True)
                     $ search_xpos = 61
+                elif persistent._language == "japanese":
+                    # add HiraganaInput(font="fonts/mplus-2c-regular.ttf", length=11, size = 22, bold=False, color=hateplus_color[char_style(None)], style=style.text["hateplus" + persistent._language], minwidth=280, yalign=0.5, italic=True)
+                    # $ search_xpos = 46
+                    add HiraganaInput(font="fonts/mplus-2c-regular.ttf", length=13, size = 22, bold=False, color=hateplus_color[char_style(None)], style=style.text["hateplus" + persistent._language], minwidth=324, yalign=0.5, italic=True)
                 else:
                     input default search_string italic True color hateplus_color[char_style(None)] style style.text["hateplus" + persistent._language] minwidth 280 yalign 0.5 changed update_search
 
@@ -727,15 +768,27 @@ screen hateplus_block_button:
     button action action background None xpadding 0 yoffset 0 at flicker:
         has vbox spacing -10
 
-        hbox spacing 10:
-            text local_message(message).name style style.text[use_style + persistent._language] hover_outlines hateplus_outlines[char_style(None)] hover_color hateplus_color[char_style(None)] bold (not persistent._language) minwidth 300 yalign 0.5 insensitive_color (192, 192, 192, 128) text_align 0
-            text local_message(message).clean_creator() style style.text[use_style + persistent._language] size 16 minwidth 110 hover_outlines hateplus_outlines[char_style(None)] hover_color hateplus_color[char_style(None)] bold (not persistent._language) yalign 0.7 insensitive_color (192, 192, 192, 128)
-        hbox spacing 10:
-            if not message.read:
-                text ("(UNREAD)") style style.text[use_style + persistent._language] size 16 minwidth 300 hover_outlines hateplus_outlines[char_style(None)] hover_color hateplus_color[char_style(None)] color If("oldstyle" not in use_style, (192, 192, 192, 128), (32, 32, 32, 128)) ypos 0.15 text_align 0
-            else:
-                null width 300
-            text local_message(message).date style style.text[use_style + persistent._language] size 14 minwidth 110 hover_outlines hateplus_outlines[char_style(None)] hover_color hateplus_color[char_style(None)] insensitive_color (192, 192, 192, 128) yalign 1.0
+        # For Japanese UI tweak
+        if persistent._language == "japanese":
+            hbox spacing 10:
+                text local_message(message).name style style.text[use_style + persistent._language] size 18 hover_outlines hateplus_outlines[char_style(None)] hover_color hateplus_color[char_style(None)] bold (not persistent._language) minwidth 300 yalign 0.5 insensitive_color (192, 192, 192, 128) text_align 0
+                text local_message(message).clean_creator() style style.text[use_style + persistent._language] line_leading -5 line_spacing -4 size 16 hover_outlines hateplus_outlines[char_style(None)] hover_color hateplus_color[char_style(None)] bold (not persistent._language) yalign 0.7 insensitive_color (192, 192, 192, 128)
+            hbox spacing 10:
+                if not message.read:
+                    text ("(UNREAD)") style style.text[use_style + persistent._language] line_leading -2 size 16 minwidth 300 hover_outlines hateplus_outlines[char_style(None)] hover_color hateplus_color[char_style(None)] color If("oldstyle" not in use_style, (192, 192, 192, 128), (32, 32, 32, 128)) ypos 0.15 text_align 0
+                else:
+                    null width 300
+                text local_message(message).date style style.text[use_style + persistent._language] line_leading -2 size 14 minwidth 110 hover_outlines hateplus_outlines[char_style(None)] hover_color hateplus_color[char_style(None)] insensitive_color (192, 192, 192, 128) yalign 1.0
+        else
+            hbox spacing 10:
+                text local_message(message).name style style.text[use_style + persistent._language] hover_outlines hateplus_outlines[char_style(None)] hover_color hateplus_color[char_style(None)] bold (not persistent._language) minwidth 300 yalign 0.5 insensitive_color (192, 192, 192, 128) text_align 0
+                text local_message(message).clean_creator() style style.text[use_style + persistent._language] size 16 minwidth 110 hover_outlines hateplus_outlines[char_style(None)] hover_color hateplus_color[char_style(None)] bold (not persistent._language) yalign 0.7 insensitive_color (192, 192, 192, 128)
+            hbox spacing 10:
+                if not message.read:
+                    text ("(UNREAD)") style style.text[use_style + persistent._language] size 16 minwidth 300 hover_outlines hateplus_outlines[char_style(None)] hover_color hateplus_color[char_style(None)] color If("oldstyle" not in use_style, (192, 192, 192, 128), (32, 32, 32, 128)) ypos 0.15 text_align 0
+                else:
+                    null width 300
+                text local_message(message).date style style.text[use_style + persistent._language] size 14 minwidth 110 hover_outlines hateplus_outlines[char_style(None)] hover_color hateplus_color[char_style(None)] insensitive_color (192, 192, 192, 128) yalign 1.0
 
 screen hateplus_scrollbar:
     default yadjust = None
@@ -891,24 +944,40 @@ screen hateplus_new_extract:
 
         hbox:
             $ height = math.ceil(len(embedded_data)/4.0)
+            $ hb_xmaximum = 620
+            if persistent._language == "japanese":
+                $hb_xmaximum = 650;
+
             window style style.window["hateplus"] xminimum 700 xmaximum 700 xpadding 10 bottom_padding 14:
                 has hbox spacing 10
-                viewport id "vp" yadjustment yadjust ymaximum 505 xmaximum 620:
+                viewport id "vp" yadjustment yadjust ymaximum 505 xmaximum hb_xmaximum:
                     window background None xpadding 0 ypadding 0 bottom_margin -3:
                         has grid 4 height spacing -4
                         for use_data in embedded_data:
                             if (embedded_data[-1].action.encrypted or "mute" in current_character) and use_data.action in store.hateplus_blocks[3].contents:
                                 $ use_data = Data("BAD DATA", "???", use_data.bytes)
 
-                            button action extract_action(use_data) style style.button[char_style()] size_group "data" left_padding 10 right_padding 13 xminimum 160 xmaximum 160 yminimum 130 ymaximum 130 focus use_data.line2:
-                                has vbox
-                                text use_data.format style style.text["hateplus" + persistent._language] size 14 bold True insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"] selected_hover_color If(use_data.action and not use_data.action.enabled, (255,255,255,220), (0,0,0,170)) selected_hover_outlines If(use_data.action and not use_data.action.enabled, style.text["hateplus"].outlines, hateplus_outlines["selected"])
-                                text use_data.line1 style style.text["hateplus" + persistent._language] size 13 insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"] selected_hover_color If(use_data.action and not use_data.action.enabled, (255,255,255,220), (0,0,0,170)) selected_hover_outlines If(use_data.action and not use_data.action.enabled, style.text["hateplus"].outlines, hateplus_outlines["selected"])
-                                window background None xpadding 0 ypadding 0 yminimum 40 xalign 0 top_margin -4:
-                                    text use_data.line2 style style.text["hateplus" + persistent._language] size 13 layout "greedy" insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"] selected_hover_color If(use_data.action and not use_data.action.enabled, (255,255,255,220), (0,0,0,170)) selected_hover_outlines If(use_data.action and not use_data.action.enabled, style.text["hateplus"].outlines, hateplus_outlines["selected"])
-                                hbox:
-                                    text use_data.line3 style style.text["hateplus" + persistent._language] size 14 minwidth 75 insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"] selected_hover_color If(use_data.action and not use_data.action.enabled, (255,255,255,220), (0,0,0,170)) selected_hover_outlines If(use_data.action and not use_data.action.enabled, style.text["hateplus"].outlines, hateplus_outlines["selected"])
-                                    text use_data.bytes style style.text["hateplus" + persistent._language] size 14 minwidth 60 text_align 1.0 insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"] selected_hover_color If(use_data.action and not use_data.action.enabled, (255,255,255,220), (0,0,0,170)) selected_hover_outlines If(use_data.action and not use_data.action.enabled, style.text["hateplus"].outlines, hateplus_outlines["selected"])
+                            if persistent._language == "japanese":
+                                # For Japanese UI tweak
+                                button action extract_action(use_data) style style.button[char_style()] size_group "data" left_padding 10 right_padding 13 bottom_padding -2 xminimum 160 xmaximum 160 yminimum 130 ymaximum 130 focus use_data.line2:
+                                    has vbox
+                                    text use_data.format style style.text["hateplus" + persistent._language] size 13 line_leading -2 bold True insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"] selected_hover_color If(use_data.action and not use_data.action.enabled, (255,255,255,220), (0,0,0,170)) selected_hover_outlines If(use_data.action and not use_data.action.enabled, style.text["hateplus"].outlines, hateplus_outlines["selected"])
+                                    text use_data.line1 style style.text["hateplus" + persistent._language] size 13 line_leading -2 yoffset -2 line_spacing -2 insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"] selected_hover_color If(use_data.action and not use_data.action.enabled, (255,255,255,220), (0,0,0,170)) selected_hover_outlines If(use_data.action and not use_data.action.enabled, style.text["hateplus"].outlines, hateplus_outlines["selected"])
+                                    window background None xpadding 0 ypadding 0 yminimum 40 xalign 0 top_margin -4:
+                                        text use_data.line2 style style.text["hateplus" + persistent._language] size 13 line_spacing -4 layout "greedy" insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"] selected_hover_color If(use_data.action and not use_data.action.enabled, (255,255,255,220), (0,0,0,170)) selected_hover_outlines If(use_data.action and not use_data.action.enabled, style.text["hateplus"].outlines, hateplus_outlines["selected"])
+                                    hbox:
+                                        text use_data.line3 style style.text["hateplus" + persistent._language] line_leading -4 yoffset 2 size 15 minwidth 75 insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"] selected_hover_color If(use_data.action and not use_data.action.enabled, (255,255,255,220), (0,0,0,170)) selected_hover_outlines If(use_data.action and not use_data.action.enabled, style.text["hateplus"].outlines, hateplus_outlines["selected"])
+                                        text use_data.bytes style style.text["hateplus" + persistent._language] line_leading -4 yoffset 4 xoffset -2 size 13 minwidth 60 text_align 1.0 insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"] selected_hover_color If(use_data.action and not use_data.action.enabled, (255,255,255,220), (0,0,0,170)) selected_hover_outlines If(use_data.action and not use_data.action.enabled, style.text["hateplus"].outlines, hateplus_outlines["selected"])
+                            else
+                                button action extract_action(use_data) style style.button[char_style()] size_group "data" left_padding 10 right_padding 13 xminimum 160 xmaximum 160 yminimum 130 ymaximum 130 focus use_data.line2:
+                                    has vbox
+                                    text use_data.format style style.text["hateplus" + persistent._language] size 14 bold True insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"] selected_hover_color If(use_data.action and not use_data.action.enabled, (255,255,255,220), (0,0,0,170)) selected_hover_outlines If(use_data.action and not use_data.action.enabled, style.text["hateplus"].outlines, hateplus_outlines["selected"])
+                                    text use_data.line1 style style.text["hateplus" + persistent._language] size 13 insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"] selected_hover_color If(use_data.action and not use_data.action.enabled, (255,255,255,220), (0,0,0,170)) selected_hover_outlines If(use_data.action and not use_data.action.enabled, style.text["hateplus"].outlines, hateplus_outlines["selected"])
+                                    window background None xpadding 0 ypadding 0 yminimum 40 xalign 0 top_margin -4:
+                                        text use_data.line2 style style.text["hateplus" + persistent._language] size 13 layout "greedy" insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"] selected_hover_color If(use_data.action and not use_data.action.enabled, (255,255,255,220), (0,0,0,170)) selected_hover_outlines If(use_data.action and not use_data.action.enabled, style.text["hateplus"].outlines, hateplus_outlines["selected"])
+                                    hbox:
+                                        text use_data.line3 style style.text["hateplus" + persistent._language] size 14 minwidth 75 insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"] selected_hover_color If(use_data.action and not use_data.action.enabled, (255,255,255,220), (0,0,0,170)) selected_hover_outlines If(use_data.action and not use_data.action.enabled, style.text["hateplus"].outlines, hateplus_outlines["selected"])
+                                        text use_data.bytes style style.text["hateplus" + persistent._language] size 14 minwidth 60 text_align 1.0 insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"] selected_hover_color If(use_data.action and not use_data.action.enabled, (255,255,255,220), (0,0,0,170)) selected_hover_outlines If(use_data.action and not use_data.action.enabled, style.text["hateplus"].outlines, hateplus_outlines["selected"])
 
                         for i in range(4*height - len(embedded_data)):
                             null
@@ -927,7 +996,11 @@ screen hateplus_new_extract:
 
                     hbox spacing 10 xanchor 1.0 xpos 270 yoffset -4 xoffset -10:
                         if extract_count:
-                            text "STATUS AFTER\nEXTRACTION" style style.text["hateplus" + persistent._language] yalign 1.0 yoffset -2 text_align 1.0
+                            # For Japanese UI tweak
+                            if persistent._language == "japanese":
+                                text "STATUS AFTER\nEXTRACTION" style style.text["hateplus" + persistent._language] yalign .5 yoffset 12 text_align 1.0
+                            else:
+                                text "STATUS AFTER\nEXTRACTION" style style.text["hateplus" + persistent._language] yalign 1.0 yoffset -2 text_align 1.0
                         else:
                             text "CURRENT STATUS" style style.text["hateplus" + persistent._language] yalign .5 text_align 1.0
                         vbox spacing -15 yalign 1.0:
@@ -942,9 +1015,16 @@ screen hateplus_new_extract:
                                 if i:
                                     viewport xmaximum 150 ymaximum 90 yoffset -6:
                                         vbox spacing If(persistent._language, -6, -8):
-                                            text "TEXT DATA" style style.text[char_style() + persistent._language] size 14 bold True insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"]
-                                            text ("// " + i.clean_creator()) style style.text[char_style() + persistent._language] size 13 insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"]
-                                            text i.name style style.text[char_style() + persistent._language] size 13 layout "greedy" insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"]
+
+                                            # For Japanese UI tweak
+                                            # 右画面のリスト
+                                            $ modify_size = 0
+                                            if persistent._language == "japanese":
+                                                $ modify_size = -1
+
+                                            text "TEXT DATA" style style.text[char_style() + persistent._language] size (14 + modify_size) bold True insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"]
+                                            text ("// " + i.clean_creator()) style style.text[char_style() + persistent._language] size 13 line_leading -4 insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"]
+                                            text i.name style style.text[char_style() + persistent._language] size 13 line_leading -4 layout "greedy" insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"]
                                 else:
                                     text "NONE" style style.text[char_style() + persistent._language] size 18 xalign 0.5 yalign 0.5 yoffset -5 color (192, 192, 192, 128)
 
@@ -1020,13 +1100,21 @@ screen debug_scroll_information:
 
 screen hateplus_message:
     default unfold = True
-    $ yadjust = ui.adjustment(changed=hateplus_read, step=24, value=store.scroll_point, adjustable=False)
+
+    # For Japanese UI tweak (M+ 2c Fonts)
+    $ step_amount = 24;
+    if persistent._language == "japanese":
+        # $ step_amount = 29;
+        $ step_amount = 27;
+
+    $ yadjust = ui.adjustment(changed=hateplus_read, step=step_amount, value=store.scroll_point, adjustable=False)
 
     if current_character == "newmute" and not message in store.inbox.contents:
         $ persistent.hateplus_deep_space_therapist.add(message.id)
 
-    key "mousedown_5" action renpy.curry(scroll_down)(yadjust, 24)
-    key "mousedown_4" action renpy.curry(scroll_up)(yadjust, 24)
+    # For Japanese UI tweak
+    key "mousedown_5" action renpy.curry(scroll_down)(yadjust, step_amount)
+    key "mousedown_4" action renpy.curry(scroll_up)(yadjust, step_amount)
     key "K_PAGEUP" action nop
     key "K_PAGEDOWN" action nop
     key "K_TAB" action nop
@@ -1059,19 +1147,25 @@ screen hateplus_message:
             else:
                 window background None xpadding 0 ypadding 0 at If(unfold, main_unfold_title, instant_fade):
                     use title(text=local_message(message).name)
+            # For Japanese UI tweak (M+ 2c Fonts)
+            $ modify_size = 0;
+            if persistent._language == "japanese":
+                # $ modify_size = 0;
+                $ modify_size = -1;
+
             hbox at If(old_style, If(unfold, main_unfold_contents, instant_fade), [ If(unfold, main_unfold_contents, instant_fade), flicker ]):
-                text If(ai_enabled, local_message(message).creator, local_message(message).clean_creator()) size 20 bold True style If(old_style, style.text["hateplus-oldstyle" + persistent._language], style.text[char_style() + persistent._language]) minwidth 190 hyperlink_functions (If(old_style, hyperlink_old_style, hyperlink_style), hyperlink_click, hyperlink_hover)
-                text (LANGUAGE_NAMES[message.language]) size 20 bold True style If(old_style, style.text["hateplus-oldstyle"], style.text[char_style()]) minwidth 80 text_align 0.5
-                text local_message(message).date size 20 bold True style If(old_style, style.text["hateplus-oldstyle" + persistent._language], style.text[char_style() + persistent._language]) minwidth 190 text_align 1.0
+                text If(ai_enabled, local_message(message).creator, local_message(message).clean_creator()) size (20 + modify_size) bold True style If(old_style, style.text["hateplus-oldstyle" + persistent._language], style.text[char_style() + persistent._language]) minwidth 190 hyperlink_functions (If(old_style, hyperlink_old_style, hyperlink_style), hyperlink_click, hyperlink_hover)
+                text (LANGUAGE_NAMES[message.language]) size (20 + modify_size) bold True style If(old_style, style.text["hateplus-oldstyle"], style.text[char_style()]) minwidth 80 text_align 0.5
+                text local_message(message).date size (20 + modify_size) bold True style If(old_style, style.text["hateplus-oldstyle" + persistent._language], style.text[char_style() + persistent._language]) minwidth 190 text_align 1.0
             null height 15
             hbox spacing 5 at If(old_style, If(unfold, main_unfold_contents, instant_fade), [ If(unfold, main_unfold_contents, instant_fade), flicker ]):
                 viewport id "vp" child_size (445, 410) ymaximum 410 xmaximum 445 yadjustment yadjust mousewheel False draggable False:
                     button background None xpadding 0 top_padding 0 bottom_padding -2:
                         has vbox spacing 0
                         for i in local_message(message).get_body():
-                            text i size 20 style If(old_style, style.text["hateplus-oldstyle" + persistent._language], style.text["hateplus" + persistent._language]) outlines [ ] yoffset If(persistent._language, 0, -4) justify True hyperlink_functions (If(old_style, hyperlink_old_style, hyperlink_style), hyperlink_click, hyperlink_hover)
+                            text i size (20 + modify_size) style If(old_style, style.text["hateplus-oldstyle" + persistent._language], style.text["hateplus" + persistent._language]) outlines [ ] yoffset If(persistent._language, 0, -4) justify True hyperlink_functions (If(old_style, hyperlink_old_style, hyperlink_style), hyperlink_click, hyperlink_hover)
                 vbox:
-                    use hateplus_scrollbar(yadjust=yadjust, amount=24, ymaximum=320, old_style=old_style)
+                    use hateplus_scrollbar(yadjust=yadjust, amount=step_amount, ymaximum=320, old_style=old_style)
             null height 0
 
 
@@ -1124,10 +1218,16 @@ screen hateplus_profile_list:
             window background None xpadding 0 ypadding 0 at main_unfold_title:
                 use title(text="Important profiles")
 
+            # For Japanese UI tweak
+            $ modify_size = 0
+
+            if persistent._language == "japanese":
+                $ modify_size = -2
+
             grid 2 20 spacing -10:
                 for name in store.seen_characters.keys():
                     button action [ Hide("hateplus_profile_list"), Jump(name) ] background None xpadding 10:
-                        text FULL_NAMES[name] style style.text["hateplus" + persistent._language] hover_color hateplus_color[char_style(None)] bold (not persistent._language) insensitive_color (192, 192, 192, 128) size 20
+                        text FULL_NAMES[name] style style.text["hateplus" + persistent._language] hover_color hateplus_color[char_style(None)] bold (not persistent._language) insensitive_color (192, 192, 192, 128) size (20 + modify_size)
 
                 for i in range((2*20)-len(store.seen_characters)):
                     null
@@ -1169,14 +1269,21 @@ screen hateplus_extracting:
             for message in range(6):
                 window background None xpadding 0 ypadding 0:#style style.button[char_style()] left_padding 10 right_padding 15 bottom_padding 16:
                     button style style.button[char_style()] size_group "data_extract" left_padding 10 right_padding 13 bottom_padding 5 xminimum 150 xmaximum 150 yminimum 64 ymaximum 64:
+
+                        # For Japanese UI tweak
+                        $ modify_size = 0
+
+                        if persistent._language == "japanese":
+                            $ modify_size = -2
+
                         if not store.to_extract[message]:
                             text "NONE" style style.text[char_style()] size 18 xalign 0.5 yalign 0.5 yoffset -5 color (192, 192, 192, 128)
                         elif message > index:
                             viewport xmaximum 150 ymaximum 90 yoffset -6:
                                 vbox spacing If(persistent._language, -6, -8):
-                                    text "TEXT DATA" style style.text[char_style() + persistent._language] size 14 bold True insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"]
-                                    text ("// " + store.to_extract[message].clean_creator()) style style.text[char_style() + persistent._language] size 13 insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"]
-                                    text store.to_extract[message].name style style.text[char_style() + persistent._language] size 13 layout "greedy" insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"]
+                                    text "TEXT DATA" style style.text[char_style() + persistent._language] size (14 + modify_size) bold True insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"]
+                                    text ("// " + store.to_extract[message].clean_creator()) style style.text[char_style() + persistent._language] size (13 + modify_size) insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"]
+                                    text store.to_extract[message].name style style.text[char_style() + persistent._language] size (13 + modify_size) layout "greedy" insensitive_color hateplus_color[char_style(None)] selected_color (0,0,0,170) selected_outlines hateplus_outlines["selected"]
                         else:
                             viewport xmaximum 150 ymaximum 90 xoffset 1:
                                 grid 11 3:
@@ -1524,6 +1631,9 @@ screen hateplus_save_button:
         # For displaying Korean times in save description - iAmGhost
         if persistent._language == "korean":
             $description_font_size = 20
+        elif persistent._language == "japanese":
+            # For Japanese UI tweak
+            $description_font_size = 20
 
         text description style style.text[char_style() + "-noselected" + persistent._language] size description_font_size bold False yalign 0.5 yoffset -4 line_spacing -4 color If(action != nop, style.text[char_style() + "-noselected" + persistent._language].color, (192, 192, 192, 128)) hover_color If(action != nop, style.text[char_style() + "-noselected" + persistent._language].hover_color, (128, 128, 128, 192)) insensitive_color (192, 192, 192, 128)
 
@@ -1558,6 +1668,9 @@ init python:
                     # I was unable to change this to formatable string (python block doesn't like [variable] expression?) - iAmGhost
                     if persistent._language == "korean":
                         ready_or_not = "%d시간 %d분 후 %s일차가 시작됩니다." % (hours, minutes, str(d["day"]))
+
+                    elif persistent._language == "japanese":
+                        ready_or_not = "%s日目開始まで ― 残り%d時間%d分" % (str(d["day"]), hours, minutes)
 
                 if renpy.demo_mode and d["day"] > 1:
                     ready_or_not = "—TRIAL OVER—\n\nPlease buy the full version of Hate Plus to continue from this save file!"
@@ -1801,6 +1914,8 @@ screen hateplus_new_screen1:
 
         if persistent._language == "korean":
             $next_button_ypos = 45
+        else if persistent._language == "japanese":
+            $next_button_ypos = 45
 
         button style style.button[char_style()] action Show("hateplus_new_screen2", Dissolve(0.5)) at [ new_unfold_contents, flicker ] xalign 1.0 ypos next_button_ypos:
             text "Next" style style.text[char_style() + persistent._language]
@@ -1847,7 +1962,13 @@ screen hateplus_new_screen2:
             button style style.button[char_style()] action SetVariable("attitude", "flirty") xpadding 15 size_group "question3" at [ main_unfold_contents, flicker ]:
                 text "Flirty" style style.text[char_style() + persistent._language] xalign 0.5
 
-        button style style.button[char_style()] action If(store.use_character and store.attitude, Show("hateplus_new_screen3", Dissolve(0.5)), None) at [ main_unfold_contents, flicker ] xalign 1.0 ypos 70:
+        $ next_button_ypos = 70
+
+        # For Japanese UI tweak
+        if persistent._language == "japanese":
+            $next_button_ypos = 45
+
+        button style style.button[char_style()] action If(store.use_character and store.attitude, Show("hateplus_new_screen3", Dissolve(0.5)), None) at [ main_unfold_contents, flicker ] xalign 1.0 ypos next_button_ypos:
             text "Next" style style.text[char_style() + persistent._language] insensitive_color (192, 192, 192, 128)
 
 screen hateplus_new_screen3:
@@ -2205,11 +2326,15 @@ screen preferences:
                     #null height 30
 
                     hbox:      
-                        button action NewLanguage("") style style.button[char_style()] xpadding 35 size_group "toggle2" ymargin -9:
+                        button action NewLanguage("") style style.button[char_style()] xpadding 35 size_group "toggle3" ymargin -9:
                             text "English" style style.text[char_style()] xalign 0.5 size 18
             
-                        button action NewLanguage("korean") style style.button[char_style()] xpadding 35 size_group "toggle2" ymargin -9:
+                        button action NewLanguage("korean") style style.button[char_style()] xpadding 35 size_group "toggle3" ymargin -9:
                             text "한글" style style.text[char_style() + "korean"] xalign 0.5 size 18
+            
+                        button action NewLanguage("japanese") style style.button[char_style()] xpadding 35 size_group "toggle3" ymargin -9:
+                            text "日本語" style style.text[char_style() + "japanese"] xalign 0.5 size 18
+                            # text "日本語" style style.preferences_button["japanese"] xalign 0.5 size 18
 
                     #button action Show("controls") style style.button["normal"] ymargin -9:
                     #    text "Show controls" style style.preferences_button[persistent._language] xalign 0.5 text_align 0.5 minwidth 360

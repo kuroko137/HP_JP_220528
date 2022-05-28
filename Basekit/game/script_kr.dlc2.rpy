@@ -22,6 +22,9 @@ init 6 python:
     en_name["*현애"] = "*Hyun-ae"
     en_name["*뮤트"] = "*Mute"
     en_name["새 *뮤트"] = "New *Mute"
+    en_name["*ヒョネ"] = "*Hyun-ae"
+    en_name["*ミュート"] = "*Mute"
+    en_name["今の *ミュート"] = "New *Mute"
 
     style.say_label["korean"].font = "2@fonts/NanumGothic.ttc"
     style.side_text = Style(style.text)

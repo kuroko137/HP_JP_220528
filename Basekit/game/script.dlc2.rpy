@@ -812,6 +812,8 @@ init 5:
                 # Hard-coded Korean since translation system is not great for formatting - iAmGhost
                 if persistent._language == "korean":
                     self.name = "\"" + (title or body or tags or author) + "\" 검색 결과"
+                elif persistent._language == "japanese":
+                    self.name = "検索結果 \"" + (title or body or tags or author) + "\""
 
                 if unread:
                     self.name = "Unread messages"
@@ -820,21 +822,29 @@ init 5:
                 # Search contents in translated messages but returns original message
                 # (returning translated message kinda works but have problem with scrolls)
                 # - iAmGhost
-                if persistent._language:
-                    for message in store.translated_blocks[persistent._language].values():
+                # Fixed problem that block 0, 3 are not excluded normally in other languages
+                # - achi:2018-08-31
+                # if persistent._language:
+                if persistent._language == "korean" or persistent._language == "japanese":
+                    target_language = persistent._language
+                    if persistent._language == "japanese":
+                        target_language = "japanese_for_search"
+                    
+                    for message in store.translated_blocks[target_language].values():
                         if message.__class__.__name__ == "HatePlusMessage":
                             if (title and title.lower() in message.name.lower()) or (body and body.lower() in message.all_body().lower()) or (author and author.lower().replace("-", "") in message.creator.lower().replace("-", "")):
-                                if not message in store.hateplus_blocks[3].contents or (not "mute" in current_character and not get_m("M6-9").encrypted and store.day > 1):
-                                    if not message in store.hateplus_blocks[0].contents or (not "hyunae" in current_character):
-                                        real_message = None
+                                real_message = None
 
-                                        for block in store.hateplus_blocks:
-                                            for original_message in block.contents:
-                                                if message.id == original_message.id:
+                                for block in store.hateplus_blocks:
+                                    for original_message in block.contents:
+                                        if message.id == original_message.id:
+
+                                            if not original_message in store.hateplus_blocks[3].contents or (not "mute" in current_character and not get_m("M6-9").encrypted and store.day > 1):
+                                                if not original_message in store.hateplus_blocks[0].contents or (not "hyunae" in current_character):
                                                     real_message = original_message
                                                     break
 
-                                        if real_message is not None and (not unread or not real_message.read):
+                                if real_message is not None and (not unread or not real_message.read):
                                             self.contents.append(real_message)
                 else:
                     for block in store.hateplus_blocks:
@@ -1322,6 +1332,24 @@ init 5:
     call blockm5_kr
     call blockm6_kr
     call block_inbox_kr
+
+    call block13_jp
+    call blockm1_jp
+    call blockm2_jp
+    call blockm3_jp
+    call blockm4_jp
+    call blockm5_jp
+    call blockm6_jp
+    call block_inbox_jp
+
+    call block13_jp_search
+    call blockm1_jp_search
+    call blockm2_jp_search
+    call blockm3_jp_search
+    call blockm4_jp_search
+    call blockm5_jp_search
+    call blockm6_jp_search
+    call block_inbox_jp_search
 
 label hateplus_after_load:
     $ config.main_menu_music = HATEPLUS_TITLE
@@ -2035,10 +2063,20 @@ label hateplus_pan_to_logs:
                 _block = None
 
                 # Korean input system returns input result in tuple - iAmGhost
+                # if persistent._language == "korean":
                 if persistent._language == "korean":
+
                     if isinstance(_return, tuple):
                         keyword, final = _return
                         _block = SearchBlock(**{ search_by:keyword })
+                # & Japanese input system support
+                elif persistent._language == "japanese":
+
+                    if isinstance(_return, tuple):
+                        keyword, final = _return
+                        _block = SearchBlock(**{ search_by:keyword })
+                    else:
+                        _block = SearchBlock(**{ search_by:_return })
                 else:
                     _block = SearchBlock(**{ search_by:_return })
 
@@ -2874,6 +2912,11 @@ label hateplus_ending_korean:
 
     credits "Korean playtesting\n{size=38}hwang soo young{/size}\n\nKorean playtesting\n{size=38}LimitedDaily{/size}\n\nKorean playtesting\n{size=38}PINKIEPIE DAISUKI{/size}" with dissolve
     $ renpy.pause(0.2)
+
+    jump hateplus_ending_
+
+# Japanese credits
+label hateplus_ending_japanese:
 
     jump hateplus_ending_
 

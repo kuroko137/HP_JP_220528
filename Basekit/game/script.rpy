@@ -1289,7 +1289,7 @@ init:
                     steam_api.indicate_achievement_progress("deep_space_detective", len(persistent.blocks), 97)
                 
         current_character = "x"
-        store.translated_blocks = { "korean":{} }
+        store.translated_blocks = { "korean":{}, "japanese":{}, "japanese_for_search":{} }
     call block1_kr
     call block2_kr
     call block3_kr
