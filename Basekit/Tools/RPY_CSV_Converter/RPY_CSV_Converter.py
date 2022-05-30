@@ -10,7 +10,7 @@ import MeCab
 import ipadic
 import pykakasi
 
-title = 'RPY-CSV Converter'
+title = 'RPY-CSV Converter 1.10'
 
 output_dir = [os.path.join('output', 'CSV'), os.path.join('output', 'RPY')]
 user_settings_path = 'settings.ini' # オプションの設定履歴
@@ -319,6 +319,9 @@ class App(tk.Frame): # GUIの設定
                     if idx == 0:
                         block = output_line
 
+                if content and not ' ' in content:
+                    content += ' ' # ブロックの取得漏れ防止
+
                 new_data.append(content)
                 new_data.insert(0, lang_code[0][0])
                 new_data.insert(0, '{0}'.format(block))
@@ -345,7 +348,9 @@ class App(tk.Frame): # GUIの設定
                         output += '    ' + 'tl_hateplus_message "' + c + '"'
                     elif idx == 1:
                         output += ' "' + lang_code[1][0] + '"'
-                    elif idx >= 2 and idx != 5:
+                    elif idx >= 2 and idx <= 3:
+                        output += ' "' + self.Wakatchi_Format(c, False) + '"'
+                    elif idx > 5:
                         output += ' "' + self.Wakatchi_Format(c) + '"'
                     else:
                         output += ' "' + c + '"'
@@ -362,7 +367,7 @@ class App(tk.Frame): # GUIの設定
             output_file = file + lang_code[0][1] + '.dlc2.rpy'
 
             if not content: continue;
-            content = 'label {0}{1}:\n'.format(file, lang_code[0][1]) + content + '\n    return'
+            content = 'label {0}{1}:\n'.format(file, lang_code[0][1]) + content + '\n    return\n'
 
             dest_path = os.path.join(output_path, output_file)
             os.makedirs(os.path.split(dest_path)[0], exist_ok=True)
@@ -375,7 +380,7 @@ class App(tk.Frame): # GUIの設定
             output_file = file + lang_code[1][1] + '.dlc2.rpy'
 
             if not content: continue;
-            content = 'label {0}{1}:\n'.format(file, lang_code[1][1]) + content + '\n    return'
+            content = 'label {0}{1}:\n'.format(file, lang_code[1][1]) + content + '\n    return\n'
 
             dest_path = os.path.join(output_path, output_file)
 
@@ -383,26 +388,15 @@ class App(tk.Frame): # GUIの設定
                 f.write(content)
 
 
-    def Wakatchi_Format(self, content, ignore_isJP=False):
-        JP_PAT = r'[\p{Hiragana}\p{Katakana}\p{Han}]'
-
-        if ignore_isJP == False and not re.search(JP_PAT, content):
-            return content
+    def Wakatchi_Format(self, content, insert_sp=True):
 
         self.m.parse("") # デコードエラー防止
 
         kks = pykakasi.kakasi()
-
-        kana_strings = re.sub(r'(\\n|\\")', r' ', content)
-        kana_strings = re.sub(r'\{[^\}]+\}', r'', kana_strings)
-        kana_strings = re.sub(r'[―「」『』”“]+', r' ', kana_strings)
-
-        node = self.m.parseToNode(kana_strings)
-
+        node = self.m.parseToNode(content)
         hiragana_converted = ''
 
         Only_Hiragana = re.compile(r'^[\p{Hiragana}]+$')
-
         while node:
             features = node.feature.split(",") # 形態素をリストに分離
             if len(features) > 8 and features[8] != '' and not Only_Hiragana.search(node.surface):
@@ -412,6 +406,9 @@ class App(tk.Frame): # GUIの設定
                 hiragana_converted += kks.convert(node.surface)[0].get('hira')
 
             node = node.next
+
+        if insert_sp and not ' ' in hiragana_converted:
+            hiragana_converted += ' ' # ブロックの取得漏れ防止
 
         result = hiragana_converted
 
